@@ -42,6 +42,9 @@ KSEQ_INIT(gzFile, gzread)
 
 #define PACKAGE_VERSION "0.3.0"
 
+int genome_seed = -1;
+int read_seed = -1;
+
 const uint8_t nst_nt4_table[256] = {
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
 	4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4,  4, 4, 4, 4, 
@@ -255,8 +258,11 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 		}
 
 		// generate mutations and print them out
+    srand48(genome_seed >= 0? genome_seed : time(0));
 		wgsim_mut_diref(ks, is_hap, rseq, rseq+1);
 		wgsim_print_mutref(ks->name.s, ks, rseq, rseq+1);
+
+    srand48(read_seed >= 0? read_seed : time(0));
 
 		for (ii = 0; ii != n_pairs; ++ii) { // the core loop
 			double ran;
@@ -342,12 +348,12 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 			for (j = 0; j < 2; ++j) {
 				for (i = 0; i < s[j]; ++i) qstr[i] = Q;
 				qstr[i] = 0;
-				fprintf(fpo[j], "@%s_%u_%u_%d:%d:%d_%d:%d:%d_%llx/%d\n", ks->name.s, ext_coor[0]+1, ext_coor[1]+1,
+				fprintf(fpo[j], ">%s_%u_%u_%d:%d:%d_%d:%d:%d_%llx/%d\n", ks->name.s, ext_coor[0]+1, ext_coor[1]+1,
 						n_err[0], n_sub[0], n_indel[0], n_err[1], n_sub[1], n_indel[1],
 						(long long)ii, j==0? is_flip+1 : 2-is_flip);
 				for (i = 0; i < s[j]; ++i)
 					fputc("ACGTN"[(int)tmp_seq[j][i]], fpo[j]);
-				fprintf(fpo[j], "\n+\n%s\n", qstr);
+				fprintf(fpo[j], "\n");
 			}
 		}
 		free(rseq[0].s); free(rseq[1].s);
@@ -374,8 +380,9 @@ static int simu_usage()
 	fprintf(stderr, "         -r FLOAT      rate of mutations [%.4f]\n", MUT_RATE);
 	fprintf(stderr, "         -R FLOAT      fraction of indels [%.2f]\n", INDEL_FRAC);
 	fprintf(stderr, "         -X FLOAT      probability an indel is extended [%.2f]\n", INDEL_EXTEND);
-	fprintf(stderr, "         -S INT        seed for random generator [-1]\n");
-	fprintf(stderr, "         -h            haplotype mode\n");
+	fprintf(stderr, "         -g INT        seed for genome random generator [-1]\n");
+	fprintf(stderr, "         -G INT        seed for reads random generator [-1]\n");
+	fprintf(stderr, "         -h            haploid mode\n");
 	fprintf(stderr, "\n");
 	return 1;
 }
@@ -385,11 +392,10 @@ int main(int argc, char *argv[])
 	int64_t N;
 	int dist, std_dev, c, size_l, size_r, is_hap = 0;
 	FILE *fpout1, *fpout2;
-	int seed = -1;
 
 	N = 1000000; dist = 500; std_dev = 50;
 	size_l = size_r = 70;
-	while ((c = getopt(argc, argv, "e:d:s:N:1:2:r:R:hX:S:")) >= 0) {
+	while ((c = getopt(argc, argv, "e:d:s:N:1:2:r:R:hX:g:G:")) >= 0) {
 		switch (c) {
 		case 'd': dist = atoi(optarg); break;
 		case 's': std_dev = atoi(optarg); break;
@@ -400,7 +406,8 @@ int main(int argc, char *argv[])
 		case 'r': MUT_RATE = atof(optarg); break;
 		case 'R': INDEL_FRAC = atof(optarg); break;
 		case 'X': INDEL_EXTEND = atof(optarg); break;
-		case 'S': seed = atoi(optarg); break;
+		case 'g': genome_seed = atoi(optarg); break;
+		case 'G': read_seed = atoi(optarg); break;
 		case 'h': is_hap = 1; break;
 		}
 	}
@@ -411,7 +418,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "[wgsim] file open error\n");
 		return 1;
 	}
-	srand48(seed > 0? seed : time(0));
+
 	wgsim_core(fpout1, fpout2, argv[optind], is_hap, N, dist, std_dev, size_l, size_r);
 
 	fclose(fpout1); fclose(fpout2);
