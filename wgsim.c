@@ -38,6 +38,7 @@
 #include <string.h>
 #include <zlib.h>
 #include "kseq.h"
+#include "gzstream.h"
 KSEQ_INIT(gzFile, gzread)
 
 #define PACKAGE_VERSION "0.3.0"
@@ -351,6 +352,7 @@ void wgsim_core(FILE *fpout1, FILE *fpout2, const char *fn, int is_hap, uint64_t
 				fprintf(fpo[j], ">%s_%u_%u_%d:%d:%d_%d:%d:%d_%llx/%d\n", ks->name.s, ext_coor[0]+1, ext_coor[1]+1,
 						n_err[0], n_sub[0], n_indel[0], n_err[1], n_sub[1], n_indel[1],
 						(long long)ii, j==0? is_flip+1 : 2-is_flip);
+        // Oh and I removed the writing of quality scores :)
 				for (i = 0; i < s[j]; ++i)
 					fputc("ACGTN"[(int)tmp_seq[j][i]], fpo[j]);
 				fprintf(fpo[j], "\n");
