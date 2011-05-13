@@ -38,7 +38,6 @@
 #include <string.h>
 #include <zlib.h>
 #include "kseq.h"
-#include "gzstream.h"
 KSEQ_INIT(gzFile, gzread)
 
 #define PACKAGE_VERSION "0.3.0"
