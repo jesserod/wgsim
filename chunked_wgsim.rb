@@ -38,5 +38,6 @@ pairs_per_chunk = total_pairs / num_chunks
 for i in 1..num_chunks
   print "wgsim #{wgsim_opts} -N #{pairs_per_chunk}"
   print " -G #{seed_multiplier * i}" if seed_multiplier > 0
-  puts " #{ref} #{prefix}1.fa.#{i} #{prefix}2.fa.#{i}"
+  reads = "#{prefix}1.fa.#{i} #{prefix}2.fa.#{i}"
+  puts " #{ref} #{reads} >muts.txt.#{i} && gzip #{reads}"
 end
